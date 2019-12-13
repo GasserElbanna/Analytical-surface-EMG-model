@@ -67,7 +67,7 @@ Z = symbols('Z')
 V = 96*(Z**3)*(exp(-Z)) - 90
 t = 0.000001
 x = fourier_fi(5,6, V)
-print(x)
+#print(x)
 
 for zi in z:
     fi = diff(V, Z)

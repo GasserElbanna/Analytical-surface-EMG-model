@@ -1,12 +1,8 @@
 import numpy as np
-from neuron import gui, h
-from scipy.special import iv, kn
-from sympy import symbols, linear_eq_to_matrix
-from skimage.transform import radon
-
-from Volume_Conductor import *
+from sympy import symbols
+from VolumeConductor import *
 #from Current_Source import *
-from Detection_Sys import *
+from DetectionSys import *
 
 #Spatial filter Input Parameters
 z_elec = 3
@@ -35,16 +31,16 @@ L2 = 0.025
 z0 = 0
 ##################################
 #Volume Conductor Input Parameters
-# a = 0.020 #in m
-# b = 0.045 #in m
-# c = 0.048 #in m
-# d = 0.050 #in m
+a = 0.020 #in m
+b = 0.045 #in m
+c = 0.048 #in m
+d = 0.050 #in m
 
-a = 0.025 #in m
-b = 0.027 #in m
-c = 0.030 #in m
+# a = 0.025 #in m
+# b = 0.027 #in m
+# c = 0.030 #in m
 
-R = 0.021 #in m
+R = 0.044 #in m
 volume_length = 0.125 #in m
 
 sigsz = 1 #in S/m
@@ -63,20 +59,20 @@ b2 = get_distance(sigmz, sigmp, b)
 b3 = get_distance(sigfz, sigfp, b)
 c3 = get_distance(sigfz, sigfp, c)
 c4 = get_distance(sigsz, sigsp, c)
-#d4 = get_distance(sigsz, sigsp, d)
+d4 = get_distance(sigsz, sigsp, d)
 
-
-# Rm = get_distance(sigmz, sigmp, R)
-# layers = [a, b, c, d]
-# layers_radial_coord = [a1, a2, b2, b3, c3, c4, d4]
-# source_radial_coord = [R, Rm, R, R]
-# cond = [sigbp, sigbz, sigmp, sigmz, sigfp, sigfz, sigsp, sigsz]
 
 Rm = get_distance(sigmz, sigmp, R)
-layers = [a, b, c]
-layers_radial_coord = [a1, a2, b2, b3, c3]
-source_radial_coord = [Rm, R, R]
-cond = [sigmp, sigmz, sigfp, sigfz, sigsp, sigsz]
+layers = [a, b, c, d]
+layers_radial_coord = [a1, a2, b2, b3, c3, c4, d4]
+source_radial_coord = [R, Rm, R, R]
+cond = [sigbp, sigbz, sigmp, sigmz, sigfp, sigfz, sigsp, sigsz]
+
+# Rm = get_distance(sigmz, sigmp, R)
+# layers = [a, b, c]
+# layers_radial_coord = [a1, a2, b2, b3, c3]
+# source_radial_coord = [Rm, R, R]
+# cond = [sigmp, sigmz, sigfp, sigfz, sigsp, sigsz]
 
 A, B, C, D, E, F, G, H, I, J, K = symbols('A B C D E F G H I J K')
 sym = [A, B, C, D, E, F, G, H, I, J, K]
@@ -85,7 +81,7 @@ sym = [A, B, C, D, E, F, G, H, I, J, K]
 # Sampling and Resolutions
 kz_max = (np.pi*f_sampling)/velocity
 bins = int((2*f_sampling*volume_length)/velocity)
-kz_step = (kz_max)/bins
+kz_step = (2*kz_max)/bins
 
 kth_step = 1
 kth_max = int((50*kth_step)/2)
@@ -95,17 +91,17 @@ th_step = int(1/kth_max)
 ############################
 
 
-vol_cond_spatial_freq = np.zeros((31, (int(bins/2))), dtype=np.complex)
-vol_cond_spatial = np.zeros((31, (int(bins/2))), dtype=np.complex)
+vol_cond_spatial_freq = np.zeros((26, (int(bins/2)+1)), dtype=np.complex)
+vol_cond_spatial = np.zeros((26, (int(bins/2)+1)), dtype=np.complex)
 
-z = np.linspace(0, volume_length, int(bins/2))
-th = np.linspace(0, np.pi, 31)
+z = np.linspace(0, volume_length, int(bins/2)+1)
+th = np.linspace(0, np.pi, 26)
 
 
-for w1 in range(31):
-    for w2 in range(int(bins/2)):
+for w1 in range(26):
+    for w2 in range(int(bins/2)+1):
         if w2 == 0:
-            kz = 0.00000001*kz_step
+            kz = 0.0000001*kz_step
         else:
             kz = w2*kz_step
         kth = w1
@@ -116,7 +112,7 @@ for w1 in range(31):
 print(vol_cond_spatial_freq)
 vol_cond_spatial = np.fft.ifft2(vol_cond_spatial_freq)
 mag = np.abs(vol_cond_spatial)
-np.savetxt("mag.csv", mag, delimiter=",")
+np.savetxt("mag_sim1.csv", mag, delimiter=",")
 print(len(mag), len(mag[0]))
 print(mag)
 mag_max = np.amax(mag)

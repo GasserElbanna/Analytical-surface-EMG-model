@@ -24,19 +24,19 @@ def kn_derv(n, z):
 def field_potential_equation(kz, kth, coeff1, coeff2, layer_radial_coord, measured_layer_radial_coord, source_radial_coord, cond, i):
     pot = ((coeff1 * iv(kth, kz * layer_radial_coord)) / iv(kth, kz * measured_layer_radial_coord)) \
             + ((coeff2 * kn(kth, kz * layer_radial_coord)) / (kn(kth, kz * measured_layer_radial_coord)))
-    if layer_radial_coord < source_radial_coord and i == 1:
+    if layer_radial_coord < source_radial_coord:
         pot += (iv(kth, kz * layer_radial_coord) * kn(kth, kz * source_radial_coord)) / cond
-    elif layer_radial_coord > source_radial_coord and i == 1:
+    elif layer_radial_coord > source_radial_coord:
         pot += (iv(kth, kz * source_radial_coord) * kn(kth, kz * layer_radial_coord)) / cond
     return pot
 
 
 def field_potential_derv_equation(kz, kth, coeff1, coeff2, layer_radial_coord, measured_layer_radial_coord, source_radial_coord, cond_row, cond_z, i):
     pot = (coeff1 * np.sqrt(cond_row * cond_z) * iv_derv(kth, kz * layer_radial_coord)) / iv(kth, kz * measured_layer_radial_coord) \
-            + (coeff2 * np.sqrt(cond_row * cond_z) * kn_derv(kth, kz * layer_radial_coord)) / kn(kth, kz *measured_layer_radial_coord)
-    if layer_radial_coord < source_radial_coord and i == 1:
+            + ((coeff2 * np.sqrt(cond_row * cond_z) * kn_derv(kth, kz * layer_radial_coord)) / kn(kth, kz *measured_layer_radial_coord))
+    if layer_radial_coord < source_radial_coord:
         pot += np.sqrt(cond_z / cond_row) * (iv_derv(kth, kz * layer_radial_coord) * kn(kth, kz * source_radial_coord))
-    elif layer_radial_coord > source_radial_coord and i == 1:
+    elif layer_radial_coord > source_radial_coord:
         pot += np.sqrt(cond_z / cond_row) * (iv(kth, kz * source_radial_coord) * kn_derv(kth, kz * layer_radial_coord))
     return pot
 
@@ -48,8 +48,6 @@ def bound_cond(bound_conds, equ1, equ2):
 def linear_to_matrix(equs, coeff):
     A, b = linear_eq_to_matrix(equs, coeff)
     A = np.array(A).astype(np.float64)
-    # cond = np.linalg.cond(A)
-    # print(cond)
     b = np.array(b).astype(np.float64)
     # np.savetxt("A.csv", A, delimiter=",")
     # np.savetxt("b.csv", b, delimiter=",")
@@ -73,7 +71,7 @@ def get_coeff(kth, kz, s, row, rowm):
 
 ###############################################Compute Field Potential##################################################
 def get_potential(kz, kth, coeff1, coeff2, row1):
-    pot = (coeff1 * iv(kth, kz * row1)) + (coeff2 * kn(kth, kz * row1))
+    pot = (coeff1 * iv(kth, kz * row1)) + (coeff2 * kn(kth, kz * row1)) + iv(kth, kz * 0.044) * kn(kth, kz * row1) / 1.0
     return pot
 
 
@@ -132,12 +130,13 @@ def show_impulse_response(potential, z, th):
     total_pot = np.concatenate((pot_1, pot_2), axis=0)
     fig = pyplot.figure(figsize=(8, 4))
     ax = fig.gca(projection='3d')
-    ax.plot_surface(Z, TH, total_pot)
-    ax.set_xlabel('Z')
-    ax.set_ylabel('Theta')
+    ax.plot_surface(TH, Z, total_pot)
+    ax.set_xlabel('Theta')
+    ax.set_ylabel('Z')
     ax.set_zlabel('Potential')
+    pyplot.savefig('sim2.png')
     pyplot.show()
-    pyplot.savefig('Graph.png')
+
 
 
 def compute_vol_cond(kz, kth, sym, layers, layers_radial_coord, source_radial_coord, cond):
