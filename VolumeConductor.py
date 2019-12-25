@@ -1,5 +1,5 @@
 import numpy as np
-from matplotlib import pyplot
+from matplotlib import pyplot, cm
 from mpl_toolkits.mplot3d import Axes3D
 from scipy.special import iv, kn, ive
 from sympy import symbols, linear_eq_to_matrix
@@ -24,9 +24,9 @@ def kn_derv(n, z):
 def field_potential_equation(kz, kth, coeff1, coeff2, layer_radial_coord, measured_layer_radial_coord, source_radial_coord, cond, i):
     pot = ((coeff1 * iv(kth, kz * layer_radial_coord)) / iv(kth, kz * measured_layer_radial_coord)) \
             + ((coeff2 * kn(kth, kz * layer_radial_coord)) / (kn(kth, kz * measured_layer_radial_coord)))
-    if layer_radial_coord < source_radial_coord:
-        pot += (iv(kth, kz * layer_radial_coord) * kn(kth, kz * source_radial_coord)) / cond
-    elif layer_radial_coord > source_radial_coord:
+    # if layer_radial_coord < source_radial_coord and i == 0:
+    #     pot += (iv(kth, kz * layer_radial_coord) * kn(kth, kz * source_radial_coord)) / cond
+    if layer_radial_coord > source_radial_coord and i == 0:
         pot += (iv(kth, kz * source_radial_coord) * kn(kth, kz * layer_radial_coord)) / cond
     return pot
 
@@ -34,9 +34,9 @@ def field_potential_equation(kz, kth, coeff1, coeff2, layer_radial_coord, measur
 def field_potential_derv_equation(kz, kth, coeff1, coeff2, layer_radial_coord, measured_layer_radial_coord, source_radial_coord, cond_row, cond_z, i):
     pot = (coeff1 * np.sqrt(cond_row * cond_z) * iv_derv(kth, kz * layer_radial_coord)) / iv(kth, kz * measured_layer_radial_coord) \
             + ((coeff2 * np.sqrt(cond_row * cond_z) * kn_derv(kth, kz * layer_radial_coord)) / kn(kth, kz *measured_layer_radial_coord))
-    if layer_radial_coord < source_radial_coord:
-        pot += np.sqrt(cond_z / cond_row) * (iv_derv(kth, kz * layer_radial_coord) * kn(kth, kz * source_radial_coord))
-    elif layer_radial_coord > source_radial_coord:
+    # if layer_radial_coord < source_radial_coord and i == 0:
+    #     pot += np.sqrt(cond_z / cond_row) * (iv_derv(kth, kz * layer_radial_coord) * kn(kth, kz * source_radial_coord))
+    if layer_radial_coord > source_radial_coord and i == 0:
         pot += np.sqrt(cond_z / cond_row) * (iv(kth, kz * source_radial_coord) * kn_derv(kth, kz * layer_radial_coord))
     return pot
 
@@ -71,7 +71,7 @@ def get_coeff(kth, kz, s, row, rowm):
 
 ###############################################Compute Field Potential##################################################
 def get_potential(kz, kth, coeff1, coeff2, row1):
-    pot = (coeff1 * iv(kth, kz * row1)) + (coeff2 * kn(kth, kz * row1)) + iv(kth, kz * 0.044) * kn(kth, kz * row1) / 1.0
+    pot = (coeff1 * iv(kth, kz * row1)) + (coeff2 * kn(kth, kz * row1))
     return pot
 
 
@@ -130,11 +130,12 @@ def show_impulse_response(potential, z, th):
     total_pot = np.concatenate((pot_1, pot_2), axis=0)
     fig = pyplot.figure(figsize=(8, 4))
     ax = fig.gca(projection='3d')
-    ax.plot_surface(TH, Z, total_pot)
+    ax.plot_surface(TH, Z, total_pot, rstride=1, cstride=1,
+                cmap='winter', edgecolor='none')
     ax.set_xlabel('Theta')
     ax.set_ylabel('Z')
     ax.set_zlabel('Potential')
-    pyplot.savefig('sim2.png')
+    pyplot.savefig('sim8.png')
     pyplot.show()
 
 
@@ -198,5 +199,6 @@ def compute_vol_cond(kz, kth, sym, layers, layers_radial_coord, source_radial_co
     matrix = linear_to_matrix(bound_conds, coeff)
     #####################
     coeffs = get_coeff(kth, kz, matrix, layers, layers_radial_coord)
+    #print(coeffs[len(coeffs)-2], coeffs[len(coeffs)-1])
     potential = get_potential(kz, kth, coeffs[len(coeffs)-2], coeffs[len(coeffs)-1], layers_radial_coord[len(layers_radial_coord)-1])
     return potential

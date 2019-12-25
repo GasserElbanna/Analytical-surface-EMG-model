@@ -1,31 +1,38 @@
 import numpy as np
-import matplotlib.pyplot as plt
+from matplotlib import pyplot
 from mpl_toolkits.mplot3d import Axes3D
-from scipy.special import iv, kn, ive, kve, kv
-from sympy import *
-from scipy.misc import derivative
+from scipy.special import iv, kn, ive
+from sympy import symbols, linear_eq_to_matrix
+from VolumeConductor import *
 
-def iv_derv(v, z):
-    derv_I = (ive(v+1, z) + ive(v-1, z))/2
-    return derv_I
+# print(-(iv(25, 0.044*np.sqrt(0.5/0.1)*128*25.1327)*kn(25, 0.045*np.sqrt(0.5/0.1)*128*25.1327))/(0.1))
+# print(-np.sqrt(0.5/0.1)*iv(25, 0.044*np.sqrt(0.5/0.1)*128*25.1327)*kn_derv(25, 0.045*np.sqrt(0.5/0.1)*128*25.1327))
+def matrix(kth, kz, am, rm):
+    A = [[1, -((iv(kth, 45*kz))/(iv(kth, 48*kz))), -((kn(kth, 45*kz))/(kn(kth, 48*kz))), 0, 0],
+         [np.sqrt(0.0001*0.0005)*((iv_derv(kth, kz*am))/(iv(kth, kz*am))), -0.00005*((iv_derv(kth, kz*45))/(iv(kth, kz*48))), -0.00005*((kn_derv(kth, kz*45))/(kn(kth, kz*48))), 0, 0],
+         [0, 1, 1, -((iv(kth, 48*kz))/(iv(kth, 50*kz))), -((kn(kth, 48*kz))/(kn(kth, 50*kz)))],
+         [0, 0.05*((iv_derv(kth, kz*0.048))/(iv(kth, kz*0.048))), 0.05*((kn_derv(kth, kz*0.048))/(kn(kth, kz*0.048))), -((iv_derv(kth, kz*0.048))/(iv(kth, kz*0.05))), -((kn_derv(kth, kz*0.048))/(kn(kth, kz*0.05)))],
+         [0, 0, 0, ((iv_derv(kth, kz*0.05))/(iv(kth, kz*0.05))), ((kn_derv(kth, kz*0.05))/(kn(kth, kz*0.05)))]]
+    b = [[-(iv(kth, rm*kz)*kn(kth, am*kz))/(0.1)],
+         [-np.sqrt(0.5/0.1)*iv(kth, rm*kz)*kn_derv(kth, am*kz)],
+         [0],
+         [0],
+         [0]]
+    # b = [[0],
+    #      [0],
+    #      [0],
+    #      [0],
+    #      [0]]
+    #np.savetxt("Atest.csv", A, delimiter=",")
+    #np.savetxt("btest.csv", b, delimiter=",")
+    c = np.linalg.solve(A, b)
+    return c
 
 
-def kn_derv(n, z):
-    derv_K = -(kv(n+1, z) + kv(n-1, z))/2
-    return derv_K
-
-
-a = np.array([[0.28472*10**-4, -0.13749*10**9, 0.13345*10**-11],
-             [0.29957*10**-4, -0.10583*10**10, -0.10144*10**-10],
-             [0, 0.40524*10**12, -0.15633*10**-12]])
-
-
-b = np.array([[ive(30, 2000*0.018*np.sqrt(0.5/0.1)), -ive(30, 2000*0.018), -kv(30, 2000*0.018)],
-             [np.sqrt(0.5*0.1)*iv_derv(30, 2000*0.018*np.sqrt(0.5/0.1)), -np.sqrt(0.05*0.05)*iv_derv(30, 2000*0.018), -np.sqrt(0.05*0.05)*kn_derv(30, 2000*0.018)],
-             [0, np.sqrt(0.05*0.05)*iv_derv(30, 2000*0.02), np.sqrt(0.05*0.05)*kn_derv(30, 2000*0.02)]])
-cond1 = np.linalg.cond(a)
-cond2 = np.linalg.cond(b)
-print(iv(0,0), kn(0,0))
-print(b)
-for i in range(-2,3,1):
-    print('a')
+def compute_test(kz, kth, layers, layers_radial_coord, am, rm):
+    mat = matrix(kth, kz, am, rm)
+    #####################
+    coeffs = get_coeff(kth, kz, mat, layers, layers_radial_coord)
+    potential = get_potential(kz, kth, coeffs[len(coeffs) - 2], coeffs[len(coeffs) - 1],
+                              layers_radial_coord[len(layers_radial_coord) - 1])
+    return potential
